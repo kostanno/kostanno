@@ -1,9 +1,6 @@
 import pytest
-from unittest.mock import patch
-from datetime import datetime, timedelta
 import pandas as pd
 import json
-import logging
 from src.reports import calculate_weekly_averages
 
 
@@ -33,5 +30,3 @@ def test_day_order_correctness(sample_dataframe):
     days_order = ['Понедельник', 'Вторник', 'Среда', 'Четверг',
     'Пятница', 'Суббота', 'Воскресенье']
     assert list(result.keys()) != "error"
-
-

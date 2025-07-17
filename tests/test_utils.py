@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock
 from src.utils import excel_to_json, get_greeting, get_currency_rates
 from datetime import datetime
