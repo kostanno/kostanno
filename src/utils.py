@@ -1,4 +1,4 @@
-import json
+
 import logging
 from datetime import datetime
 import pandas as pd
@@ -58,7 +58,7 @@ def get_currency_rates():
     try:
         logging.info("Запрос курсов валют...")
         response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
-        response.raise_for_status()  # Проверка на ошибки HTTP
+        response.raise_for_status()
         data = response.json()
         rates = {
             'USD': data['rates']['RUB'],
