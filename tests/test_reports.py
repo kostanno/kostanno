@@ -27,6 +27,5 @@ def sample_dataframe():
 def test_day_order_correctness(sample_dataframe):
     """Тест правильного порядка дней недели в результате"""
     result = json.loads(calculate_weekly_averages(sample_dataframe))
-    days_order = ['Понедельник', 'Вторник', 'Среда', 'Четверг',
-    'Пятница', 'Суббота', 'Воскресенье']
+    days_order = ['Понедельник', 'Вторник', 'Среда', 'Четверг','Пятница', 'Суббота', 'Воскресенье']
     assert list(result.keys()) != "error"
