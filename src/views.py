@@ -1,13 +1,12 @@
 import json
-from utils import excel_to_json, get_greeting, get_currency_rates, get_sp500_price, load_user_settings
+from utils import excel_to_json, get_greeting, get_currency_rates, get_sp500_price
 
 
 def main(time_str, excel_path):
     """Главная функция, возвращающая JSON-ответ"""
     greeting = get_greeting(time_str)
     cards = excel_to_json(excel_path)
-    user_settings = load_user_settings()
-    currency_rates = get_currency_rates(user_settings["user_currencies"])
+    currency_rates = get_currency_rates()
     sp500_price = get_sp500_price()
     response = {"greeting": greeting, "cards": cards, "currency_rates": currency_rates, "sp500_price": sp500_price}
 

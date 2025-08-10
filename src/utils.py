@@ -6,11 +6,14 @@ from pandas.io import json
 import os
 from dotenv import load_dotenv
 import requests
+import json
+
 
 load_dotenv()
 
 
 API_KEY = os.getenv("API_KEY")
+API_KEY1 = os.getenv("API_KEY1")
 
 
 logging.basicConfig(
@@ -49,16 +52,12 @@ def excel_to_json(excel_path: str) -> Dict[str, List[Dict[str, Any]]]:
     try:
         logging.info(f"Чтение Excel-файла: {excel_path}")
         df = pd.read_excel(excel_path)
-
-        # Обработка данных по картам
         cards_data = []
         card_groups = df.groupby("Номер карты")
-
         for card_number, group in card_groups:
             last_digits = str(card_number)[-4:] if pd.notna(card_number) else "0000"
             total_spent = group["Сумма платежа"].sum()
             cashback = total_spent / 100  # 1% кешбэк
-
             cards_data.append(
                 {
                     "last_digits": last_digits,
@@ -85,23 +84,16 @@ def excel_to_json(excel_path: str) -> Dict[str, List[Dict[str, Any]]]:
         return {"cards": [], "top_transactions": []}
 
 
-def load_user_settings():
-    """Загружает настройки валют и акций из файла"""
-    try:
-        with open("user_settings.json", "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"user_currencies": ["USD", "EUR"], "user_stocks": ["AAPL", "GOOGL"]}
-
-
-def get_currency_rates(currencies=["USD", "EUR"]):
+def get_currency_rates():
     """Получает курсы валют через exchangerates_data API"""
     rates = []
-    api_key = "qguILuxpZJZ1TAjPtUWTdl49T0mxG3Sn"
     try:
+        with open('../data/user_settings.json', "r") as f:
+            settings = json.load(f)
+        currencies = settings.get("user_currencies")
         symbols = ",".join(currencies)
         url = f"https://api.apilayer.com/exchangerates_data/latest?symbols={symbols}&base=RUB"
-        headers = {"apikey": api_key}
+        headers = {"apikey": API_KEY}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
@@ -120,33 +112,33 @@ def get_currency_rates(currencies=["USD", "EUR"]):
 def get_sp500_price() -> List[Dict[str, float]]:
     """
     Получает текущие цены акций из списка в user_settings.json
-
     """
+    result = []
     try:
         with open("../data/user_settings.json", "r") as f:
             settings = json.load(f)
-            stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
-        if not stocks:
-            logging.warning("В user_settings.json не указаны акции")
-            return []
-        logging.info(f"Запрос цен для акций: {stocks}")
-        API_KEY = "5BK9STW9CU9CIAPY"
-        result = []
+            stocks = settings.get("user_stocks", [])
+            if not stocks:
+                logging.warning("В user_settings.json не указаны акции")
+                return []
         for symbol in stocks:
             try:
-                url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={API_KEY}"
-                response = requests.get(url)
+                url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={API_KEY1}"
+                response = requests.get(url, timeout=10)
                 response.raise_for_status()
                 data = response.json()
-                if "Global Quote" in data:
+                if "Global Quote" in data and data["Global Quote"]:
                     price = float(data["Global Quote"]["05. price"])
-                    result.append({"stock": symbol, "price": round(price, 2)})
+                    result.append({
+                        "symbol": symbol,
+                        "price": round(price, 2)
+                    })
                 else:
-                    logging.warning(f"Не удалось получить цену для {symbol}")
-            except Exception as e:
-                logging.error(f"Ошибка при получении цены для {symbol}: {e}")
-                continue
-        logging.info(f"Успешно получены цены для {len(result)} акций")
+                    logging.warning(f"Не удалось получить данные для {symbol}")
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Ошибка запроса для {symbol}: {e}")
+            except (KeyError, ValueError) as e:
+                logging.error(f"Ошибка обработки данных для {symbol}: {e}")
         return result
     except FileNotFoundError:
         logging.error("Файл user_settings.json не найден")
